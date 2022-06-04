@@ -11,10 +11,7 @@ provider:
   runtime: nodejs12.x
   lambdaHashingVersion: 20201221
   region: us-east-1
-
-  # you can overwrite defaults here
   #  stage: dev
-  #  region: us-east-1
 
   # you can add statements to the Lambda function's IAM Role here
   #  iamRoleStatements:
@@ -43,14 +40,52 @@ provider:
             - dynamodb:PutItem
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
-          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+          Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.TODO_LISTS_DYNAMO_DB_TABLE_NAME}"
 
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    TODO_LISTS_DYNAMO_DB_TABLE_NAME: TodoListsTable
+#    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
 
 functions:
   hello:
     handler: src/handlers.hello
+    events:
+      - httpApi:
+          path: /test
+          method: get
+
+
+  createTodoList:
+    handler: src/handlers.createTodoList
+    events:
+      - http:
+          path: /list
+          method: post
+          cors: true
+
+  getTodoList:
+    handler: src/handlers.getTodoList
+    events:
+      - http:
+          path: /list/{listId}
+          method: get
+          cors: true
+
+  updateTodoList:
+    handler: src/handlers.updateTodoList
+    events:
+      - http:
+          path: /list/{listId}
+          method: put
+          cors: true
+
+  deleteTodoList:
+    handler: src/handlers.deleteTodoList
+    events:
+      - http:
+          path: /list/{listId}
+          method: delete
+          cors: true
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -107,19 +142,17 @@ plugins:
 
 resources:
   Resources:
-    TodosDynamoDbTable:
+    TodoListsTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
-          -
-            AttributeName: listId
+          - AttributeName: listId
             AttributeType: S
         KeySchema:
-          -
-            AttributeName: listId
+          - AttributeName: listId
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        TableName: ${self:provider.environment.TODO_LISTS_DYNAMO_DB_TABLE_NAME}
