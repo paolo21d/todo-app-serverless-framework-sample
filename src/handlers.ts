@@ -1,13 +1,12 @@
 import {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from "aws-lambda";
-import AWS from "aws-sdk";
 import {v4} from "uuid";
 import {ToDoList} from "./model/ToDoList";
 import {ToDoItem} from "./model/ToDoItem";
 import {NotFoundException} from "./exception/NotFoundException";
 import * as yup from "yup";
+import {fetchTodoListById, removeTodoList, saveTodoList} from "./service/TodoListService";
+import {findItemInTodoList} from "./service/TodoItemService";
 
-const docClient = new AWS.DynamoDB.DocumentClient();
-const tableName = "TodoListsTable";
 const defaultHeaders = {
     "content-type": "application/json",
 };
@@ -38,6 +37,7 @@ const createTodoListRequestSchema = yup.object().shape({
     listName: yup.string().required(),
     deadlineDate: yup.string().required()
 });
+
 async function validateCreateTodoListRequest(event: APIGatewayProxyEvent): Promise<string> {
     const requestBody = JSON.parse(event.body as string);
     console.log(requestBody);
@@ -52,12 +52,7 @@ export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
         await validateCreateTodoListRequest(event);
         const todoList = createTodoListFromCreateRequest(event);
 
-        await docClient
-            .put({
-                TableName: tableName,
-                Item: todoList,
-            })
-            .promise();
+        await saveTodoList(todoList);
         return {
             statusCode: 201,
             headers: defaultHeaders,
@@ -97,13 +92,7 @@ export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
         todoList.name = name;
         todoList.deadlineDate = deadlineDate;
 
-        await docClient
-            .put({
-                TableName: tableName,
-                Item: todoList,
-            })
-            .promise();
-
+        await saveTodoList(todoList);
         return {
             statusCode: 200,
             headers: defaultHeaders,
@@ -121,14 +110,7 @@ export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
 
         await fetchTodoListById(listId);
 
-        await docClient
-            .delete({
-                TableName: tableName,
-                Key: {
-                    listId: listId,
-                },
-            })
-            .promise();
+        await removeTodoList(listId);
         return {
             statusCode: 204,
             body: ""
@@ -154,7 +136,6 @@ export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 
     await saveTodoList(todoList);
-
     return {
         statusCode: 201,
         headers: defaultHeaders,
@@ -180,7 +161,6 @@ export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
         itemToUpdate.isDone = isDone;
 
         await saveTodoList(todoList);
-
         return {
             statusCode: 200,
             headers: defaultHeaders,
@@ -205,7 +185,6 @@ export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
         todoList.items.splice(index, 1);
 
         await saveTodoList(todoList);
-
         return {
             statusCode: 204,
             body: ""
@@ -216,13 +195,6 @@ export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
 }
 
 /// private methods
-function getMockTodoList(): ToDoList {
-    const todoItem1 = new ToDoItem(v4(), "item1", false, '2022-07-06T18:24:00');
-    const todoItem2 = new ToDoItem(v4(), "item2", false, '2022-07-06T18:24:00');
-    const todoItem3 = new ToDoItem(v4(), "item3", true, '2022-06-06T18:24:00');
-    return new ToDoList(v4(), 'list1', '2022-07-04T18:24:00', 'user1', '2022-07-06T18:24:00', [todoItem1, todoItem2, todoItem3]);
-}
-
 function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
     const requestBody = JSON.parse(event.body as string);
     console.log(requestBody);
@@ -246,58 +218,6 @@ function createTodoItemFromCreateRequest(event: APIGatewayProxyEvent): ToDoItem 
     const createDate = new Date().toISOString();
 
     return new ToDoItem(itemId, itemName, isDone, createDate);
-}
-
-async function fetchTodoListById(listId: string): Promise<ToDoList> {
-    const output = await docClient
-        .get({
-            TableName: tableName,
-            Key: {
-                listId: listId,
-            },
-        })
-        .promise();
-
-    if (!output.Item) {
-        throw new NotFoundException("todoList", listId);
-    }
-    return output.Item as ToDoList;
-}
-
-async function fetchTodoItemById(listId: string, itemId: string): Promise<ToDoItem> {
-    const todoList: ToDoList = await fetchTodoListById(listId);
-    if (todoList.items == null || todoList.items.length == 0) {
-        throw new NotFoundException("todoItem", itemId);
-    }
-
-    const foundItem = todoList.items.find(item => item.itemId === itemId);
-    if (foundItem == null) {
-        throw new NotFoundException("todoItem", itemId);
-    } else {
-        return foundItem;
-    }
-}
-
-function findItemInTodoList(todoList: ToDoList, itemId: string): ToDoItem {
-    if (todoList.items == null || todoList.items.length == 0) {
-        throw new NotFoundException("todoItem", itemId);
-    }
-
-    const foundItem = todoList.items.find(item => item.itemId === itemId);
-    if (foundItem == null) {
-        throw new NotFoundException("todoItem", itemId);
-    } else {
-        return foundItem;
-    }
-}
-
-async function saveTodoList(todoList: ToDoList): Promise<void> {
-    await docClient
-        .put({
-            TableName: tableName,
-            Item: todoList,
-        })
-        .promise();
 }
 
 function handleError(error: Error): APIGatewayProxyResult {
