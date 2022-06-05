@@ -128,18 +128,24 @@ functions:
 
 plugins:
   - serverless-plugin-typescript
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+  - serverless-offline
+  - serverless-dynamodb-local
 
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      # Comment if you don't have a DynamoDB running locally
+#      noStart: true
+    migration:
+      dir: offline/migrations
+
+
+# you can add CloudFormation resource templates here
 resources:
   Resources:
     TodoListsTable:

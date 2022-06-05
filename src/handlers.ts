@@ -45,6 +45,7 @@ export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
 
 export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const listId = event.pathParameters?.listId;
+    console.log("GET todo list with id " + listId);
 
     const output = await docClient
         .get({
@@ -56,7 +57,6 @@ export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatew
         .promise();
 
     const todoList = output.Item as ToDoList;
-    console.log(todoList);
     // if (!output.Item) {
     //     throw new HttpError(404, { error: "not found" });
     // }
