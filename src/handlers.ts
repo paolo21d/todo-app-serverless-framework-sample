@@ -167,13 +167,26 @@ export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
 }
 
 export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId as string;
-    const itemId = event.pathParameters?.itemId as string;
-    console.log("DELETE todo item with id " + itemId + " for list with id " + listId);
-    return {
-        statusCode: 501,
-        headers: defaultHeaders,
-        body: "Unimplemented"
+    try {
+        const listId = event.pathParameters?.listId as string;
+        const itemId = event.pathParameters?.itemId as string;
+        console.log("DELETE todo item with id " + itemId + " for list with id " + listId);
+
+        const todoList = await fetchTodoListById(listId);
+        const itemToDelete = findItemInTodoList(todoList, itemId);
+
+        const index = todoList.items?.indexOf(itemToDelete, 0);
+        // @ts-ignore
+        todoList.items.splice(index, 1);
+
+        await saveTodoList(todoList);
+
+        return {
+            statusCode: 204,
+            body: ""
+        }
+    } catch (error) {
+        return handleError(error);
     }
 }
 
