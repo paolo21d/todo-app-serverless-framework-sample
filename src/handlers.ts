@@ -1,9 +1,10 @@
-import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
+import {APIGatewayProxyEvent, APIGatewayProxyResult, Context} from "aws-lambda";
 import AWS from "aws-sdk";
 import {v4} from "uuid";
 import {ToDoList} from "./model/ToDoList";
 import {ToDoItem} from "./model/ToDoItem";
 import {NotFoundException} from "./exception/NotFoundException";
+import * as yup from "yup";
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 const tableName = "TodoListsTable";
@@ -11,13 +12,20 @@ const defaultHeaders = {
     "content-type": "application/json",
 };
 
-export const hello = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const hello = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+    console.log("EVENT:")
+    console.log(event)
+
+    console.log("CONTEXT");
+    console.log(context);
+
     return {
         statusCode: 200,
         body: JSON.stringify(
             {
                 message: "Go Serverless v1.0! Your function executed successfully!",
                 input: event,
+                context: context
             },
             null,
             2,
@@ -26,21 +34,38 @@ export const hello = async (event: APIGatewayProxyEvent): Promise<APIGatewayProx
 };
 
 /// manage ToDoList
-export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log("POST todo list");
-    const todoList = createTodoListFromCreateRequest(event);
+const createTodoListRequestSchema = yup.object().shape({
+    listName: yup.string().required(),
+    deadlineDate: yup.string().required()
+});
+async function validateCreateTodoListRequest(event: APIGatewayProxyEvent): Promise<string> {
+    const requestBody = JSON.parse(event.body as string);
+    console.log(requestBody);
+    await createTodoListRequestSchema.validate(requestBody, {abortEarly: false});
 
-    await docClient
-        .put({
-            TableName: tableName,
-            Item: todoList,
-        })
-        .promise();
-    return {
-        statusCode: 201,
-        headers: defaultHeaders,
-        body: JSON.stringify(todoList, null, 2)
-    };
+    return requestBody;
+}
+
+export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+        console.log("POST todo list");
+        await validateCreateTodoListRequest(event);
+        const todoList = createTodoListFromCreateRequest(event);
+
+        await docClient
+            .put({
+                TableName: tableName,
+                Item: todoList,
+            })
+            .promise();
+        return {
+            statusCode: 201,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList, null, 2)
+        };
+    } catch (error) {
+        return handleError(error);
+    }
 }
 
 export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -282,6 +307,24 @@ function handleError(error: Error): APIGatewayProxyResult {
             headers: defaultHeaders,
             body: error.responseBody
         }
+    }
+
+    if (error instanceof yup.ValidationError) {
+        return {
+            statusCode: 400,
+            headers: defaultHeaders,
+            body: JSON.stringify({
+                errors: error.errors,
+            }),
+        };
+    }
+
+    if (error instanceof SyntaxError) {
+        return {
+            statusCode: 400,
+            headers: defaultHeaders,
+            body: JSON.stringify({error: `invalid request body format : "${error.message}"`}),
+        };
     }
     throw error;
 }
