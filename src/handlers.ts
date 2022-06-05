@@ -78,11 +78,32 @@ export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatew
 }
 
 export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId as string;
-    return {
-        statusCode: 501,
-        headers: defaultHeaders,
-        body: "Unimplemented"
+    try {
+        const listId = event.pathParameters?.listId as string;
+
+        const todoList = await fetchTodoListById(listId);
+        const requestBody = JSON.parse(event.body as string);
+        console.log(requestBody);
+        const name = requestBody.listName;
+        const deadlineDate = requestBody.deadlineDate;
+
+        todoList.name = name;
+        todoList.deadlineDate = deadlineDate;
+
+        await docClient
+            .put({
+                TableName: tableName,
+                Item: todoList,
+            })
+            .promise();
+
+        return {
+            statusCode: 200,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList)
+        }
+    } catch (error) {
+        return handleError(error);
     }
 }
 
