@@ -138,13 +138,31 @@ export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
 }
 
 export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId as string;
-    const itemId = event.pathParameters?.itemId as string;
-    console.log("PUT todo item with id " + itemId + " for list with id " + listId);
-    return {
-        statusCode: 501,
-        headers: defaultHeaders,
-        body: "Unimplemented"
+    try {
+        const listId = event.pathParameters?.listId as string;
+        const itemId = event.pathParameters?.itemId as string;
+        console.log("PUT todo item with id " + itemId + " for list with id " + listId);
+
+        const todoList = await fetchTodoListById(listId);
+        const itemToUpdate = findItemInTodoList(todoList, itemId);
+
+        const requestBody = JSON.parse(event.body as string);
+        console.log(requestBody);
+        const itemName = requestBody.itemName;
+        const isDone = requestBody.isDone;
+
+        itemToUpdate.name = itemName;
+        itemToUpdate.isDone = isDone;
+
+        await saveTodoList(todoList);
+
+        return {
+            statusCode: 200,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList)
+        }
+    } catch (error) {
+        return handleError(error);
     }
 }
 
@@ -206,6 +224,33 @@ async function fetchTodoListById(listId: string): Promise<ToDoList> {
         throw new NotFoundException("todoList", listId);
     }
     return output.Item as ToDoList;
+}
+
+async function fetchTodoItemById(listId: string, itemId: string): Promise<ToDoItem> {
+    const todoList: ToDoList = await fetchTodoListById(listId);
+    if (todoList.items == null || todoList.items.length == 0) {
+        throw new NotFoundException("todoItem", itemId);
+    }
+
+    const foundItem = todoList.items.find(item => item.itemId === itemId);
+    if (foundItem == null) {
+        throw new NotFoundException("todoItem", itemId);
+    } else {
+        return foundItem;
+    }
+}
+
+function findItemInTodoList(todoList: ToDoList, itemId: string): ToDoItem {
+    if (todoList.items == null || todoList.items.length == 0) {
+        throw new NotFoundException("todoItem", itemId);
+    }
+
+    const foundItem = todoList.items.find(item => item.itemId === itemId);
+    if (foundItem == null) {
+        throw new NotFoundException("todoItem", itemId);
+    } else {
+        return foundItem;
+    }
 }
 
 async function saveTodoList(todoList: ToDoList): Promise<void> {
