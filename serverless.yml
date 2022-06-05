@@ -86,6 +86,30 @@ functions:
           path: /list/{listId}
           method: delete
           cors: true
+
+  createTodoItem:
+    handler: src/handlers.createTodoItem
+    events:
+      - http:
+          path: /list/{listId}/item
+          method: post
+          cors: true
+
+  updateTodoItem:
+    handler: src/handlers.updateTodoItem
+    events:
+      - http:
+          path: /list/{listId}/item/{itemId}
+          method: put
+          cors: true
+
+  deleteTodoItem:
+    handler: src/handlers.deleteTodoItem
+    events:
+      - http:
+          path: /list/{listId}/item/{itemId}
+          method: delete
+          cors: true
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
@@ -140,7 +164,7 @@ custom:
       inMemory: true
       migrate: true
       # Comment if you don't have a DynamoDB running locally
-#      noStart: true
+    #      noStart: true
     migration:
       dir: offline/migrations
 

@@ -25,27 +25,9 @@ export const hello = async (event: APIGatewayProxyEvent): Promise<APIGatewayProx
     };
 };
 
-function getMockTodoList(): ToDoList {
-    const todoItem1 = new ToDoItem(v4(), "item1", false, '2022-07-06T18:24:00');
-    const todoItem2 = new ToDoItem(v4(), "item2", false, '2022-07-06T18:24:00');
-    const todoItem3 = new ToDoItem(v4(), "item3", true, '2022-06-06T18:24:00');
-    return new ToDoList(v4(), 'list1', '2022-07-04T18:24:00', 'user1', '2022-07-06T18:24:00', [todoItem1, todoItem2, todoItem3]);
-}
-
-function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
-    const requestBody = JSON.parse(event.body as string);
-    console.log(requestBody);
-    const listId = v4();
-    const name = requestBody.listName;
-    const deadlineDate = requestBody.deadlineDate;
-    const userId = "user_" + v4(); //TODO get user from request
-    const createDate = new Date().toISOString();
-
-    return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
-}
-
+/// manage ToDoList
 export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    // const todoList = getMockTodoList();
+    console.log("POST todo list");
     const todoList = createTodoListFromCreateRequest(event);
 
     await docClient
@@ -129,6 +111,59 @@ export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
     } catch (error) {
         return handleError(error);
     }
+}
+
+/// manage ToDoItem
+export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const listId = event.pathParameters?.listId as string;
+    console.log("POST todo item for list with id " + listId);
+    return {
+        statusCode: 501,
+        headers: defaultHeaders,
+        body: "Unimplemented"
+    }
+}
+
+export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const listId = event.pathParameters?.listId as string;
+    const itemId = event.pathParameters?.itemId as string;
+    console.log("PUT todo item with id " + itemId + " for list with id " + listId);
+    return {
+        statusCode: 501,
+        headers: defaultHeaders,
+        body: "Unimplemented"
+    }
+}
+
+export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const listId = event.pathParameters?.listId as string;
+    const itemId = event.pathParameters?.itemId as string;
+    console.log("DELETE todo item with id " + itemId + " for list with id " + listId);
+    return {
+        statusCode: 501,
+        headers: defaultHeaders,
+        body: "Unimplemented"
+    }
+}
+
+/// private methods
+function getMockTodoList(): ToDoList {
+    const todoItem1 = new ToDoItem(v4(), "item1", false, '2022-07-06T18:24:00');
+    const todoItem2 = new ToDoItem(v4(), "item2", false, '2022-07-06T18:24:00');
+    const todoItem3 = new ToDoItem(v4(), "item3", true, '2022-06-06T18:24:00');
+    return new ToDoList(v4(), 'list1', '2022-07-04T18:24:00', 'user1', '2022-07-06T18:24:00', [todoItem1, todoItem2, todoItem3]);
+}
+
+function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
+    const requestBody = JSON.parse(event.body as string);
+    console.log(requestBody);
+    const listId = v4();
+    const name = requestBody.listName;
+    const deadlineDate = requestBody.deadlineDate;
+    const userId = "user_" + v4(); //TODO get user from request
+    const createDate = new Date().toISOString();
+
+    return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
 }
 
 async function fetchTodoListById(listId: string): Promise<ToDoList> {
