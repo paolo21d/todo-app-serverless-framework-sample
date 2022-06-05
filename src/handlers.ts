@@ -117,10 +117,23 @@ export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
 export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const listId = event.pathParameters?.listId as string;
     console.log("POST todo item for list with id " + listId);
+
+    const todoList: ToDoList = await fetchTodoListById(listId);
+    const creatingTodoItem = createTodoItemFromCreateRequest(event);
+    // todoList.addItem(creatingTodoItem);
+
+    if (todoList.items != null && todoList.items.length > 0) {
+        todoList.items.push(creatingTodoItem);
+    } else {
+        todoList.items = [creatingTodoItem];
+    }
+
+    await saveTodoList(todoList);
+
     return {
-        statusCode: 501,
+        statusCode: 201,
         headers: defaultHeaders,
-        body: "Unimplemented"
+        body: JSON.stringify(todoList)
     }
 }
 
@@ -157,6 +170,7 @@ function getMockTodoList(): ToDoList {
 function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
     const requestBody = JSON.parse(event.body as string);
     console.log(requestBody);
+
     const listId = v4();
     const name = requestBody.listName;
     const deadlineDate = requestBody.deadlineDate;
@@ -164,6 +178,18 @@ function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList 
     const createDate = new Date().toISOString();
 
     return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
+}
+
+function createTodoItemFromCreateRequest(event: APIGatewayProxyEvent): ToDoItem {
+    const requestBody = JSON.parse(event.body as string);
+    console.log(requestBody);
+
+    const itemId = v4();
+    const itemName = requestBody.itemName;
+    const isDone = requestBody.isDone;
+    const createDate = new Date().toISOString();
+
+    return new ToDoItem(itemId, itemName, isDone, createDate);
 }
 
 async function fetchTodoListById(listId: string): Promise<ToDoList> {
@@ -180,6 +206,15 @@ async function fetchTodoListById(listId: string): Promise<ToDoList> {
         throw new NotFoundException("todoList", listId);
     }
     return output.Item as ToDoList;
+}
+
+async function saveTodoList(todoList: ToDoList): Promise<void> {
+    await docClient
+        .put({
+            TableName: tableName,
+            Item: todoList,
+        })
+        .promise();
 }
 
 function handleError(error: Error): APIGatewayProxyResult {

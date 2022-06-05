@@ -16,4 +16,13 @@ export class ToDoList {
         this.createDate = createDate;
         this.items = items;
     }
+
+    // TODO when I try to use it there is problem: "TypeError: todoList.addItem is not a function"
+    addItem(newItem: ToDoItem): void {
+        if (this.items != null && this.items.length > 0) {
+            this.items.push(newItem);
+        } else {
+            this.items = [newItem];
+        }
+    }
 }
