@@ -32,24 +32,11 @@ export const hello = async (event: APIGatewayProxyEvent, context: Context): Prom
     };
 };
 
-/// manage ToDoList
-const createTodoListRequestSchema = yup.object().shape({
-    listName: yup.string().required(),
-    deadlineDate: yup.string().required()
-});
-
-async function validateCreateTodoListRequest(event: APIGatewayProxyEvent): Promise<string> {
-    const requestBody = JSON.parse(event.body as string);
-    console.log(requestBody);
-    await createTodoListRequestSchema.validate(requestBody, {abortEarly: false});
-
-    return requestBody;
-}
-
+// create ToDoList
 export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         console.log("POST todo list");
-        await validateCreateTodoListRequest(event);
+        await validateTodoListRequest(event);
         const todoList = createTodoListFromCreateRequest(event);
 
         await saveTodoList(todoList);
@@ -63,6 +50,20 @@ export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
+function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
+    const requestBody = JSON.parse(event.body as string);
+    console.log(requestBody);
+
+    const listId = v4();
+    const name = requestBody.listName;
+    const deadlineDate = requestBody.deadlineDate;
+    const userId = "user_" + v4(); //TODO get user from request
+    const createDate = new Date().toISOString();
+
+    return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
+}
+
+// get ToDoList
 export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
@@ -79,9 +80,12 @@ export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatew
     }
 }
 
+// update ToDoList
 export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
+        console.log("PUT todo item for list with id " + listId);
+        await validateTodoListRequest(event);
 
         const todoList = await fetchTodoListById(listId);
         const requestBody = JSON.parse(event.body as string);
@@ -103,6 +107,7 @@ export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
+// delete ToDoList
 export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
@@ -120,10 +125,11 @@ export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
-/// manage ToDoItem
+/// create ToDoItem
 export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const listId = event.pathParameters?.listId as string;
     console.log("POST todo item for list with id " + listId);
+    await validateTodoItemRequest(event);
 
     const todoList: ToDoList = await fetchTodoListById(listId);
     const creatingTodoItem = createTodoItemFromCreateRequest(event);
@@ -143,11 +149,25 @@ export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
+function createTodoItemFromCreateRequest(event: APIGatewayProxyEvent): ToDoItem {
+    const requestBody = JSON.parse(event.body as string);
+    console.log(requestBody);
+
+    const itemId = v4();
+    const itemName = requestBody.itemName;
+    const isDone = requestBody.isDone;
+    const createDate = new Date().toISOString();
+
+    return new ToDoItem(itemId, itemName, isDone, createDate);
+}
+
+/// update ToDoItem
 export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
         const itemId = event.pathParameters?.itemId as string;
         console.log("PUT todo item with id " + itemId + " for list with id " + listId);
+        await validateTodoItemRequest(event);
 
         const todoList = await fetchTodoListById(listId);
         const itemToUpdate = findItemInTodoList(todoList, itemId);
@@ -171,6 +191,7 @@ export const updateTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
+/// delete ToDoItem
 export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
@@ -195,31 +216,34 @@ export const deleteTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGa
 }
 
 /// private methods
-function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList {
+const todoListRequestSchema = yup.object().shape({
+    listName: yup.string().required(),
+    deadlineDate: yup.string().required()
+});
+
+async function validateTodoListRequest(event: APIGatewayProxyEvent): Promise<string> {
     const requestBody = JSON.parse(event.body as string);
     console.log(requestBody);
+    await todoListRequestSchema.validate(requestBody, {abortEarly: false});
 
-    const listId = v4();
-    const name = requestBody.listName;
-    const deadlineDate = requestBody.deadlineDate;
-    const userId = "user_" + v4(); //TODO get user from request
-    const createDate = new Date().toISOString();
-
-    return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
+    return requestBody;
 }
 
-function createTodoItemFromCreateRequest(event: APIGatewayProxyEvent): ToDoItem {
+//
+const todoItemRequestSchema = yup.object().shape({
+    itemName: yup.string().required(),
+    isDone: yup.boolean().required()
+});
+
+async function validateTodoItemRequest(event: APIGatewayProxyEvent): Promise<string> {
     const requestBody = JSON.parse(event.body as string);
     console.log(requestBody);
+    await todoItemRequestSchema.validate(requestBody, {abortEarly: false});
 
-    const itemId = v4();
-    const itemName = requestBody.itemName;
-    const isDone = requestBody.isDone;
-    const createDate = new Date().toISOString();
-
-    return new ToDoItem(itemId, itemName, isDone, createDate);
+    return requestBody;
 }
 
+//
 function handleError(error: Error): APIGatewayProxyResult {
     if (error instanceof NotFoundException) {
         return {
