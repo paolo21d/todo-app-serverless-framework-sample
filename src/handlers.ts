@@ -3,6 +3,7 @@ import AWS from "aws-sdk";
 import {v4} from "uuid";
 import {ToDoList} from "./model/ToDoList";
 import {ToDoItem} from "./model/ToDoItem";
+import {NotFoundException} from "./exception/NotFoundException";
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 const tableName = "TodoListsTable";
@@ -61,9 +62,55 @@ export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
 }
 
 export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId;
-    console.log("GET todo list with id " + listId);
+    try {
+        const listId = event.pathParameters?.listId as string;
+        console.log("GET todo list with id " + listId);
 
+        const todoList = await fetchTodoListById(listId);
+        return {
+            statusCode: 200,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList)
+        }
+    } catch (error) {
+        return handleError(error);
+    }
+}
+
+export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    const listId = event.pathParameters?.listId as string;
+    return {
+        statusCode: 501,
+        headers: defaultHeaders,
+        body: "Unimplemented"
+    }
+}
+
+export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+        const listId = event.pathParameters?.listId as string;
+        console.log("DELETE todo list with id " + listId);
+
+        await fetchTodoListById(listId);
+
+        await docClient
+            .delete({
+                TableName: tableName,
+                Key: {
+                    listId: listId,
+                },
+            })
+            .promise();
+        return {
+            statusCode: 204,
+            body: ""
+        }
+    } catch (error) {
+        return handleError(error);
+    }
+}
+
+async function fetchTodoListById(listId: string): Promise<ToDoList> {
     const output = await docClient
         .get({
             TableName: tableName,
@@ -73,32 +120,19 @@ export const getTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatew
         })
         .promise();
 
-    const todoList = output.Item as ToDoList;
-    // if (!output.Item) {
-    //     throw new HttpError(404, { error: "not found" });
-    // }
-
-    return {
-        statusCode: 200,
-        headers: defaultHeaders,
-        body: JSON.stringify(todoList)
+    if (!output.Item) {
+        throw new NotFoundException("todoList", listId);
     }
+    return output.Item as ToDoList;
 }
 
-export const updateTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId;
-    return {
-        statusCode: 501,
-        headers: defaultHeaders,
-        body: "Unimplemented"
+function handleError(error: Error): APIGatewayProxyResult {
+    if (error instanceof NotFoundException) {
+        return {
+            statusCode: error.statusCode,
+            headers: defaultHeaders,
+            body: error.responseBody
+        }
     }
-}
-
-export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId;
-    return {
-        statusCode: 501,
-        headers: defaultHeaders,
-        body: "Unimplemented"
-    }
+    throw error;
 }
