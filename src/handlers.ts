@@ -127,25 +127,29 @@ export const deleteTodoList = async (event: APIGatewayProxyEvent): Promise<APIGa
 
 /// create ToDoItem
 export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    const listId = event.pathParameters?.listId as string;
-    console.log("POST todo item for list with id " + listId);
-    await validateTodoItemRequest(event);
+    try {
+        const listId = event.pathParameters?.listId as string;
+        console.log("POST todo item for list with id " + listId);
+        await validateTodoItemRequest(event);
 
-    const todoList: ToDoList = await fetchTodoListById(listId);
-    const creatingTodoItem = createTodoItemFromCreateRequest(event);
-    // todoList.addItem(creatingTodoItem);
+        const todoList: ToDoList = await fetchTodoListById(listId);
+        const creatingTodoItem = createTodoItemFromCreateRequest(event);
+        // todoList.addItem(creatingTodoItem);
 
-    if (todoList.items != null && todoList.items.length > 0) {
-        todoList.items.push(creatingTodoItem);
-    } else {
-        todoList.items = [creatingTodoItem];
-    }
+        if (todoList.items != null && todoList.items.length > 0) {
+            todoList.items.push(creatingTodoItem);
+        } else {
+            todoList.items = [creatingTodoItem];
+        }
 
-    await saveTodoList(todoList);
-    return {
-        statusCode: 201,
-        headers: defaultHeaders,
-        body: JSON.stringify(todoList)
+        await saveTodoList(todoList);
+        return {
+            statusCode: 201,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList)
+        }
+    } catch (error) {
+        return handleError(error);
     }
 }
 
