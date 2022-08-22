@@ -23,6 +23,16 @@ export async function fetchTodoListById(listId: string): Promise<ToDoList> {
     return output.Item as ToDoList;
 }
 
+export async function fetchAllTodoLists(): Promise<ToDoList[]> {
+    const output = await docClient
+        .scan({
+            TableName: tableName
+        })
+        .promise();
+
+    return output.Items as ToDoList[];
+}
+
 export async function saveTodoList(todoList: ToDoList): Promise<void> {
     await docClient
         .put({

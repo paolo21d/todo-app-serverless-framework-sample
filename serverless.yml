@@ -71,6 +71,14 @@ functions:
           method: get
           cors: true
 
+  getAllTodoLists:
+    handler: src/handlers.getAllTodoLists
+    events:
+      - http:
+          path: /list
+          method: get
+          cors: true
+
   updateTodoList:
     handler: src/handlers.updateTodoList
     events:

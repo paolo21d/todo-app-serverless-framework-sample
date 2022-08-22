@@ -4,7 +4,7 @@ import {ToDoList} from "./model/ToDoList";
 import {ToDoItem} from "./model/ToDoItem";
 import {NotFoundException} from "./exception/NotFoundException";
 import * as yup from "yup";
-import {fetchTodoListById, removeTodoList, saveTodoList} from "./service/TodoListService";
+import {fetchAllTodoLists, fetchTodoListById, removeTodoList, saveTodoList} from "./service/TodoListService";
 import {findItemInTodoList} from "./service/TodoItemService";
 
 const defaultHeaders = {
@@ -61,6 +61,22 @@ function createTodoListFromCreateRequest(event: APIGatewayProxyEvent): ToDoList 
     const createDate = new Date().toISOString();
 
     return new ToDoList(listId, name, deadlineDate, userId, createDate, []);
+}
+
+// get All ToDoLists
+export const getAllTodoLists = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+        console.log("GET all todo lists");
+
+        const todoList = await fetchAllTodoLists();
+        return {
+            statusCode: 200,
+            headers: defaultHeaders,
+            body: JSON.stringify(todoList)
+        }
+    } catch (error) {
+        return handleError(error);
+    }
 }
 
 // get ToDoList
