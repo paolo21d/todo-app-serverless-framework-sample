@@ -1,4 +1,3 @@
-// create ToDoList
 import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {fetchAllTodoLists, fetchTodoListById, removeTodoList, saveTodoList} from "./service/TodoListService";
 import {ToDoList} from "./model/ToDoList";
@@ -6,6 +5,7 @@ import {v4} from "uuid";
 import {defaultHeaders, handleError} from "./handlers";
 import * as yup from "yup";
 
+// create ToDoList
 export const createTodoList = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         console.log("POST todo list");

@@ -8,7 +8,7 @@
     "types": ["jest"],
     "outDir": ".build",
     "moduleResolution": "node",
-    "lib": ["es2017"],
+    "lib": ["es2017", "dom"],
     "rootDir": "./",
     "strict": true,
     "module": "commonjs",
