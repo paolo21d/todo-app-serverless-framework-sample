@@ -56,7 +56,7 @@ functions:
 
 
   createTodoList:
-    handler: src/handlers.createTodoList
+    handler: src/manageTodoListHandler.createTodoList
     events:
       - http:
           path: /list
@@ -64,7 +64,7 @@ functions:
           cors: true
 
   getTodoList:
-    handler: src/handlers.getTodoList
+    handler: src/manageTodoListHandler.getTodoList
     events:
       - http:
           path: /list/{listId}
@@ -72,7 +72,7 @@ functions:
           cors: true
 
   getAllTodoLists:
-    handler: src/handlers.getAllTodoLists
+    handler: src/manageTodoListHandler.getAllTodoLists
     events:
       - http:
           path: /list
@@ -80,7 +80,7 @@ functions:
           cors: true
 
   updateTodoList:
-    handler: src/handlers.updateTodoList
+    handler: src/manageTodoListHandler.updateTodoList
     events:
       - http:
           path: /list/{listId}
@@ -88,7 +88,7 @@ functions:
           cors: true
 
   deleteTodoList:
-    handler: src/handlers.deleteTodoList
+    handler: src/manageTodoListHandler.deleteTodoList
     events:
       - http:
           path: /list/{listId}
@@ -96,7 +96,7 @@ functions:
           cors: true
 
   createTodoItem:
-    handler: src/handlers.createTodoItem
+    handler: src/manageTodoItemHandler.createTodoItem
     events:
       - http:
           path: /list/{listId}/item
@@ -104,7 +104,7 @@ functions:
           cors: true
 
   updateTodoItem:
-    handler: src/handlers.updateTodoItem
+    handler: src/manageTodoItemHandler.updateTodoItem
     events:
       - http:
           path: /list/{listId}/item/{itemId}
@@ -112,7 +112,7 @@ functions:
           cors: true
 
   deleteTodoItem:
-    handler: src/handlers.deleteTodoItem
+    handler: src/manageTodoItemHandler.deleteTodoItem
     events:
       - http:
           path: /list/{listId}/item/{itemId}
