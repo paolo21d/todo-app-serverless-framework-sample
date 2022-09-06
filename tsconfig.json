@@ -5,6 +5,7 @@
     "sourceMap": true,
     "allowJs": true,
     "target": "es2017",
+    "types": ["jest"],
     "outDir": ".build",
     "moduleResolution": "node",
     "lib": ["es2017"],

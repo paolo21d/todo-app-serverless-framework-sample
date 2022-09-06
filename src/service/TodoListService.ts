@@ -1,10 +1,11 @@
 import {ToDoList} from "../model/ToDoList";
 import {NotFoundException} from "../exception/NotFoundException";
-import AWS from "aws-sdk";
+
 import {ToDoItem} from "../model/ToDoItem";
 import {v4} from "uuid";
+import {docClient} from "./DynamoDocumentClient";
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+
 const tableName = "TodoListsTable";
 
 export async function fetchTodoListById(listId: string): Promise<ToDoList> {
