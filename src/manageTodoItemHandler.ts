@@ -1,4 +1,3 @@
-/// create ToDoItem
 import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {ToDoList} from "./model/ToDoList";
 import {fetchTodoListById, saveTodoList} from "./service/TodoListService";
@@ -8,6 +7,7 @@ import {findItemInTodoList} from "./service/TodoItemService";
 import {defaultHeaders, handleError} from "./handlers";
 import * as yup from "yup";
 
+/// create ToDoItem
 export const createTodoItem = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
         const listId = event.pathParameters?.listId as string;
