@@ -162,6 +162,7 @@ plugins:
   - serverless-plugin-typescript
   - serverless-offline
   - serverless-dynamodb-local
+  - serverless-plugin-scripts
 
 custom:
   dynamodb:
@@ -175,6 +176,9 @@ custom:
     #      noStart: true
     migration:
       dir: offline/migrations
+  scripts:
+    hooks:
+      'aws:common:validate:validate': yarn test
 
 
 # you can add CloudFormation resource templates here
